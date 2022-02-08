@@ -1,0 +1,4 @@
+{
+    "SERVER_URL_AUTH": "http://localhost:5000/api/auth",
+    "SERVER_URL_NOTES": "http://localhost:5000/api/notes"
+}

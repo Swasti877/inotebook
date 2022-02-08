@@ -14,11 +14,12 @@ router.post("/createuser", [
   body('password', "Password lenght must be minimum 5").isLength({ min: 5 }),
   body('email', "Enter a valid Email").isEmail(),
 ], async (req, res) => {
-
+  
+  let success = false;
   //if there are error return bad request and error
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({success, errors: errors.array() });
   };
 
   //check wheather User Email already existed
@@ -27,6 +28,7 @@ router.post("/createuser", [
 
     if (user) {
       return res.status(400).json({
+        success,
         error: "This Email is already Registered."
       })
     }
@@ -48,59 +50,62 @@ router.post("/createuser", [
       }
     }
     const authToken = jwt.sign(data, JWT_SECRET);
-    res.json({authToken}); //ES5 authToken: authToken -> authToken
+    success = true;
+    res.json({success, authToken }); //ES5 authToken: authToken -> authToken
   } catch (error) {  //catch block
     console.error(error.message)
-    res.status(500).send("Internal Server Error")
+    res.status(500).send(success, "Internal Server Error")
   }
 })
 
 //ROUTE: 2 Login a USER using POST: "/api/auth/login" No login Required.
-router.post('/login',[
+router.post('/login', [
   body('password', "Password cannot be blank").exists(),
   body('email', "Enter a valid Email").isEmail(),
-], async(req, res)=>{
+], async (req, res) => {
 
+  let success = false;
   //if there are error return bad request and error
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ success, errors: errors.array() });
   };
 
-  const {email, password} = req.body;
-  try{
-    let user = await User.findOne({email});
-    if(!user){
-      return res.status(400).json({error: "Invalid Credential"});
+  const { email, password } = req.body;
+  try {
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ success, error: "Invalid Credential" });
     }
-    
+
     const passCompare = await bcrypt.compare(password, user.password);
-    if(!passCompare){
-      return res.status(400).json({error: "invalid Credential"});
+    if (!passCompare) {
+      return res.status(400).json({ success, error: "invalid Credential" });
     }
 
     const data = {
-      user:{
+      user: {
         id: user.id
       }
     }
     const authToken = jwt.sign(data, JWT_SECRET);
-    res.json({authToken})
-  }catch(error) {
+    success = true;
+    res.json({ success, authToken })
+  } catch (error) {
     console.error(error.message);
-    res.status(500).json({error: "Internal Server Error"});
+    res.status(500).json({ success, error: "Internal Server Error" });
   }
 })
 
 //ROUTE: 3 Get Login user Detail using POST: "/api/auth/getuser" login Required.
-router.post('/getuser', fetchuser, async(req, res)=>{
-  try{
+router.post('/getuser', fetchuser, async (req, res) => {
+  try {
     const userid = req.user.id;
     const user = await User.findById(userid).select('-password');
     res.send(user);
-  }catch(error) {
+  } catch (error) {
     console.error(error.message);
-    res.status(500).json({error: "Internal Server Error"});
+    res.status(500).json({ error: "Internal Server Error" });
   }
 })
 

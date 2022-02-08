@@ -1,13 +1,20 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import NoteContext from '../context/notes/NoteContext';
 import NotesItem from './NotesItem';
+import { useNavigate } from 'react-router-dom';
 
-export default function Notes() {
+export default function Notes(props) {
     const context = useContext(NoteContext);
     const { notes, getAllNotes, updateNote } = context;
-    const[note, setNote] = useState({id: "", etitle: "", edescription: "", etag: ""})
+    const [note, setNote] = useState({ id: "", etitle: "", edescription: "", etag: "" })
+    const navigate = useNavigate();
+
     useEffect(() => {
-        getAllNotes();
+        if (localStorage.getItem('token')) {
+            getAllNotes();
+        } else {
+            navigate('/login')
+        }
     }, []);
 
     const ref = useRef(null);
@@ -16,19 +23,20 @@ export default function Notes() {
         ref.current.click();
         setNote({
             id: currentNote._id,
-            etitle: currentNote.title, 
+            etitle: currentNote.title,
             edescription: currentNote.description,
             etag: currentNote.tag
         });
+        props.showAlert('Updated Successfully', 'success');
     }
     const handleClick = (e) => {
         e.preventDefault();
         updateNote(note.id, note.etitle, note.edescription, note.etag);
         refClose.current.click();
-        console.log("Updateing Note......", note)
+        window.location.reload(false);
     }
     const onChange = (e) => {
-       setNote({...note, [e.target.name]: e.target.value})
+        setNote({ ...note, [e.target.name]: e.target.value })
     }
     return (
         <>
@@ -57,21 +65,24 @@ export default function Notes() {
                                 </div>
                                 <div className="mb-3">
                                     <label htmlFor="etag" className="form-label">Tag</label>
-                                    <input type="text" className="form-control" id="etag" name='etag' onChange={onChange} value={note.etag} />
+                                    <input type="text" className="form-control" id="etag" name='etag' onChange={onChange} value={note.etag} minLength={3} required={true} />
                                 </div>
                             </form>
                         </div>
                         <div className="modal-footer">
                             <button type="button" ref={refClose} className="btn btn-secondary" data-dismiss="modal">Close</button>
-                            <button type="button" className="btn btn-primary" onClick={handleClick}>Save changes</button>
+                            <button type="button" className="btn btn-primary" onClick={handleClick} disabled={note.etitle.length < 5 || note.edescription.length < 10}>Save changes</button>
                         </div>
                     </div>
                 </div>
             </div>
             <div className='row my-3'>
                 <h2>Your Notes: </h2>
+                <div className='container'>
+                    {notes.length === 0 && 'No Notes to Display'}
+                </div>
                 {notes.map((note) => {
-                    return <NotesItem key={note._id} editNote={editNote} note={note} />
+                    return <NotesItem key={note._id} editNote={editNote} note={note} showAlert={props.showAlert} />
                 })}
             </div>
         </>

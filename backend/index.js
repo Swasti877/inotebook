@@ -7,7 +7,7 @@ const cors = require('cors')
 connectToMongoose();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: '*' }));
 
 //available routes
 app.use('/api/auth', require('./routes/auth'))
